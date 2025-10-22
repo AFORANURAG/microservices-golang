@@ -1,0 +1,79 @@
+func (srv *Server) ListenAndServe() error {
+	ln, err := net.Listen("tcp", srv.Addr)
+	if err != nil {
+		return err
+	}
+	return srv.Serve(ln)
+}
+
+func (srv *Server) Serve(ln net.Listener) error {
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			srv.logf("accept error: %v", err)
+			continue
+		}
+
+		go srv.handleConn(conn)
+	}
+}
+
+func (srv *Server) handleConn(conn net.Conn) {
+	for {
+		req, err := readRequest(conn, srv.MaxHeaderBytes)
+		if err != nil {
+			return
+		}
+
+		handler := srv.Handler
+		if handler == nil {
+			handler = http.DefaultServeMux
+		}
+
+		handler.ServeHTTP(responseWriter, req)
+	}
+}
+
+// so serveMux is a handler
+
+// serveMux builds a internal map
+
+// {
+// 	"/hello":   helloHandler,
+// 	"/goodbye": byeHandler,
+//   }
+
+// so when a request comes in, it calls internal mux.ServeHTTP(w, r)
+// that does the below
+// func (mux *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// 	// Figure out which handler to call
+// 	h, _ := mux.Handler(r)
+
+// 	// Call it
+// 	h.ServeHTTP(w, r)
+// }
+
+// and Handler do the following
+
+// func (mux *ServeMux) Handler(r *http.Request) (Handler, string) {
+// 	path := cleanPath(r.URL.Path)
+// 	host := stripPort(r.Host)
+
+// 	// 1. Exact match?
+// 	if h, ok := mux.m[host+path]; ok {
+// 		return h, path
+// 	}
+
+// 	// 2. Longest prefix match (for patterns ending with "/")
+// 	for pattern, handler := range mux.m {
+// 		if strings.HasPrefix(path, pattern) {
+// 			return handler, pattern
+// 		}
+// 	}
+
+// 	// 3. If no match, return NotFoundHandler
+// 	return http.NotFoundHandler(), ""
+// }
+
+// https://chatgpt.com/share/68f8e877-6018-800c-b796-841060bdb017
+// http.ListenAndServe(, nil)
