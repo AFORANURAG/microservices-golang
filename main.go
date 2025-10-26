@@ -17,8 +17,10 @@ func main() {
 
 	helloHandler := handlers.NewHelloHandler()
 	goodbyeHandler := handlers.NewGoodByeHandler()
+	productHandler := handlers.NewProductHandler()
 	serveMux.Handle("/", helloHandler)
 	serveMux.Handle("/goodbye", goodbyeHandler)
+	serveMux.Handle("/product", productHandler)
 	go func() {
 		// blocking operation
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
